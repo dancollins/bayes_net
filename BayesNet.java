@@ -143,8 +143,36 @@ public class BayesNet {
 	 * book/slides).
 	 */
 	public void priorSample() {
+	    double rand;
+	    double prob;
 
-		// YOUR CODE HERE
+	    for (Node n : nodes) {
+		// Maybe I can improve this later
+		switch (n.parents.length) {
+		case 0:
+		    prob = n.probs[0];
+		    break;
+		case 1:
+		    prob = n.parents[0].value ? n.probs[0] : n.probs[1];
+		    break;
+		case 2:
+		    // Yeah..  I write a lot of hardware code, so
+		    // writing multiplexors like this is pretty normal...
+		    // There's bound to be an easier way to do this.
+		    prob = n.parents[0].value ?
+			(n.parents[1].value ? n.probs[0] : n.probs[1])
+			: (n.parents[1].value ? n.probs[2] : n.probs[3]);
+		    break;
+		default:
+		    System.err.println("More than two parents is not supported with the prior sample!");
+		    System.err.printf("Parents: %d\n", n.parents.length);
+		    prob = 0.0;
+		    break;
+		}
+
+		rand = Math.random();
+		n.value = rand <= prob ? true : false;
+	    }
 	}
 
 	/**
