@@ -1,0 +1,19 @@
+Bayes Network Assignment
+Dan Collins
+1183446
+COMP316-14A
+
+This assignment builds a bayes network, and then infers probabilities
+using rejection sampling, likelihood weighting and markov-chaining
+monte carlo (MCMC).
+
+The inferences are the same across the three methods, so the outputs
+are close to the same value.
+
+To run, simply use 'python BayesNet.py', and the interpreter will take
+care of the rest.
+
+Note that the last experiment for each inference takes a long time.
+Python isn't the fastest.  Java was significantly faster (tested with
+rejection sampling).
+
