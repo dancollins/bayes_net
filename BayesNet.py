@@ -200,6 +200,23 @@ class BayesNet:
         return weights[0] / (weights[0] + weights[1])
 
     '''
+    This method will return a list of a node's children
+
+    queryNode
+            The node to create the markov blanket for
+    '''
+    def children(self, queryNode):
+        children = []
+        for n in self.nodes:
+            # If we don't already have it in our list, add it
+            if (queryNode in n.parents
+                and n not in children):
+                children.append(n)
+
+        return children
+            
+
+    '''
     Markov-Chain Monte Carlo Inference.
     This method returns the probability of the query variable being
     true given the values of the evidence variables, estimated based
@@ -217,7 +234,77 @@ class BayesNet:
     '''
     def MCMCask(self, queryNode, indicesOfEvidenceNodes,
                           evidenceValues, N):
-        return 0.0
+        counts = [0, 0]
+
+        # Set the evidence nodes
+        for i, value in enumerate(evidenceValues):
+            self.nodes[indicesOfEvidenceNodes[i]].value = value
+
+        # Get a reference to the query node
+        qn = self.nodes[queryNode]
+
+        # Build a list of non evidence nodes.
+        nonEvidence = [self.nodes[i]
+                       for i in range(len(self.nodes))
+                       if i not in indicesOfEvidenceNodes]
+
+        # Cache the children of the non-evidence nodes
+        children = {}
+        for n in nonEvidence:
+            children[n] = self.children(n)
+        
+        # Randomly assign values to the non-evidence variables
+        for n in nonEvidence:
+            n.value = True if random.random() <= 0.5 else False
+
+        # Conduct the trial N times
+        for i in range(N):
+            # Increment the count based on the current state of the
+            # query node
+            if qn.value:
+                counts[0] += 1
+            else:
+                counts[1] += 1
+
+            for n in nonEvidence:
+                # Calculate the conditional probability of this node
+                # given its parents
+                # P(X | Parents(X))
+                P_true = n.conditionalProbability()
+                P_false = 1.0 - P_true
+
+                # Calculate the conditional probabilities of the
+                # child nodes given their parents
+                for c in children[n]:
+                    # P(c|n=true,OtherParents(c))
+                    n.value = True
+                    pt = c.conditionalProbability()
+
+                    # P(c|n=false,OtherParents(c))
+                    n.value = False
+                    pf = c.conditionalProbability()
+
+                    # If the node is false, we need 1-P.  This is
+                    # because the conditionalProbability supplies us
+                    # with P(c=true)
+                    if c.value:
+                        P_true *= pt
+                        P_false *= pf
+                    else:
+                        P_true *= (1.0-pt)
+                        P_false *= (1.0-pf)
+
+                # Normalise the output to get the probability this
+                # node is true
+                P = P_true / (P_true + P_false)
+
+                # With probability P, set the value of the node to be
+                # true
+                n.value = True if random.random() <= P else False
+
+            
+        # Normalise the count to get the probability
+        return float(counts[0]) / float(counts[0] + counts[1])
 
 if __name__ == "__main__":
     b = BayesNet()
